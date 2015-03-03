@@ -81,13 +81,13 @@ var Builder = (function () {
 
     /* -- public chaining methods -- */
 
-    var proto = Builder.prototype;
+    var proto        = Builder.prototype;
 
     /**
      * @param {...string}
      * @returns {Builder}
      */
-    proto.select = function select() {
+    proto.select     = function select() {
         var fields = Array.prototype.slice.call(arguments);
         if (fields.length === 1 && Array.isArray(fields[0])) fields = fields[0];
 
@@ -100,7 +100,7 @@ var Builder = (function () {
      * @param {boolean} enable
      * @returns {Builder}
      */
-    proto.or = function or(enable) {
+    proto.or         = function or(enable) {
         this._conditionGlue = enable ? ' OR ' : ' AND ';
 
         return this;
@@ -119,7 +119,7 @@ var Builder = (function () {
      * @param {Object} data
      * @returns {Builder}
      */
-    proto.data = function data(data) {
+    proto.data       = function data(data) {
         this._data = data;
         return this;
     };
@@ -128,7 +128,7 @@ var Builder = (function () {
      * @param {string} column
      * @returns {Builder}
      */
-    proto.asc = function asc(column) {
+    proto.asc        = function asc(column) {
         if (this._order == null) this._order = [];
         this._order.push(mysql.escapeId(column) + ' ASC');
         return this;
@@ -138,7 +138,7 @@ var Builder = (function () {
      * @param {string} column
      * @returns {Builder}
      */
-    proto.desc = function desc(column) {
+    proto.desc       = function desc(column) {
         if (this._order == null) this._order = [];
         this._order.push(mysql.escapeId(column) + ' DESC');
         return this;
@@ -148,7 +148,7 @@ var Builder = (function () {
      * @param {...number}
      * @returns {Builder}
      */
-    proto.limits = function limits() {
+    proto.limit      = function limit() {
         this._limits = Array.prototype.slice.call(arguments);
         return this;
     };
@@ -157,7 +157,7 @@ var Builder = (function () {
      * @param {boolean} value
      * @returns {Builder}
      */
-    proto.ignore = function ignore(value) {
+    proto.ignore     = function ignore(value) {
         this._ignore = value;
         return this;
     };
@@ -165,7 +165,7 @@ var Builder = (function () {
     /**
      * @returns {Promise}
      */
-    proto.update = function update() {
+    proto.update     = function update() {
         if (this._data == null && this._query == null) {
             return Promise.reject(new Error("SQL: Missing data for an UPDATE query!"));
         }
@@ -188,7 +188,7 @@ var Builder = (function () {
     /**
      * @returns {Promise}
      */
-    proto.upsert = function upsert() {
+    proto.upsert     = function upsert() {
         this._upsert = true;
         return this.insert();
     };
@@ -196,7 +196,7 @@ var Builder = (function () {
     /**
      * @returns {Promise}
      */
-    proto.insert = function insert() {
+    proto.insert     = function insert() {
         var query = this._query;
 
         if (query == null) {
@@ -219,7 +219,7 @@ var Builder = (function () {
     /**
      * @returns {Promise}
      */
-    proto.erase = function erase() {
+    proto.erase      = function erase() {
         var query      = this._query,
             conditions = this._conditions;
 
@@ -237,7 +237,7 @@ var Builder = (function () {
     /**
      * @returns {Promise}
      */
-    proto.truncate = function truncate() {
+    proto.truncate   = function truncate() {
         var query = 'TRUNCATE TABLE ' + mysql.escapeId(this._table);
 
         return zeal.execute(query);
@@ -246,7 +246,7 @@ var Builder = (function () {
     /**
      * @returns {Promise}
      */
-    proto.one = function one() {
+    proto.one        = function one() {
         return this.many().then(function (rows) {
             return rows.shift || null;
         });
@@ -255,7 +255,7 @@ var Builder = (function () {
     /**
      * @returns {Promise}
      */
-    proto.many = function many() {
+    proto.many       = function many() {
         var query      = this._query,
             conditions = this._conditions;
 
@@ -275,7 +275,7 @@ var Builder = (function () {
     /**
      * @returns {Promise}
      */
-    proto.field = function field() {
+    proto.field      = function field() {
         return this.one().then(function (row) {
             if (row == null) return null;
             var field = Object.keys(row)[0];
@@ -286,7 +286,7 @@ var Builder = (function () {
     /**
      * @returns {Promise}
      */
-    proto.column = function column() {
+    proto.column     = function column() {
         return this.many().then(function (rows) {
             if (rows.length === 0) return [];
             var field = Object.keys(rows[0])[0];
@@ -301,6 +301,15 @@ var Builder = (function () {
 
 var pool;
 
+function queryFormat(query, values) {
+    if (values == null) return query;
+
+    return query.replace(/\:(\w+)/gm, function (txt, key) {
+        if (values.hasOwnProperty(key)) return zeal.escape(values[key]);
+        return txt;
+    });
+}
+
 var zeal = module.exports = {
 
     /**
@@ -308,6 +317,8 @@ var zeal = module.exports = {
      */
     configure : function configure(options) {
         if (pool) throw new Error('Can only call zeal.configure once!');
+
+        options.queryFormat = queryFormat;
 
         pool = mysql.createPool(options);
     },
@@ -350,4 +361,4 @@ var zeal = module.exports = {
             });
         });
     }
-}
+};
