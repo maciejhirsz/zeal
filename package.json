@@ -1,6 +1,6 @@
 {
   "name": "zeal",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "MySQL with query building and ES6 Promises",
   "main": "index.js",
   "repository" : {
