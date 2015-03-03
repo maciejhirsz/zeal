@@ -28,8 +28,9 @@ var Builder = (function () {
      * @returns {string}
      */
     function buildConditions() {
-        return Object.keys(this._conditions).map(function (column) {
-            var value = this._conditions[column];
+        var conditions = this._conditions;
+        return Object.keys(conditions).map(function (column) {
+            var value = conditions[column];
             column = mysql.escapeId(column);
             if (value === null) {
                 return column + ' IS NULL';
@@ -45,8 +46,9 @@ var Builder = (function () {
      * @returns {string}
      */
     function buildData() {
-        return Object.keys(this._data).map(function (column) {
-            return mysql.escape(column) + ' = ' + zeal.escape(this._data[column]);
+        var data = this._data;
+        return Object.keys(data).map(function (column) {
+            return mysql.escape(column) + ' = ' + zeal.escape(data[column]);
         }).join(', ');
     }
 
