@@ -2,7 +2,7 @@
 
 var mysql = require('mysql');
 
-var Builder = (function(){
+var Builder = (function () {
     /**
      * @param {string|null} table
      * @param {string|undefined} query
@@ -28,7 +28,7 @@ var Builder = (function(){
      * @returns {string}
      */
     function buildConditions() {
-        return Object.keys(this._conditions).map(function(column) {
+        return Object.keys(this._conditions).map(function (column) {
             var value = this._conditions[column];
             column = mysql.escapeId(column);
             if (value === null) {
@@ -45,7 +45,7 @@ var Builder = (function(){
      * @returns {string}
      */
     function buildData() {
-        return Object.keys(this._data).map(function(column) {
+        return Object.keys(this._data).map(function (column) {
             return mysql.escape(column) + ' = ' + zeal.escape(this._data[column]);
         }).join(', ');
     }
@@ -68,10 +68,10 @@ var Builder = (function(){
         var columns = Object.keys(this._data[0]);
 
         var columnsQuery = columns.map(mysql.escapeId).join(', '),
-            query = 'INSERT ' + (this._ignore ? 'IGNORE ' : '') + 'INTO ' + mysql.escapeId(this._table) + ' (' + columnsQuery + ') VALUES ';
+            query        = 'INSERT ' + (this._ignore ? 'IGNORE ' : '') + 'INTO ' + mysql.escapeId(this._table) + ' (' + columnsQuery + ') VALUES ';
 
-        query += this._data.map(function(row) {
-            return '(' + columns.map(function(column) {
+        query += this._data.map(function (row) {
+            return '(' + columns.map(function (column) {
                     return zeal.escape(row[column]);
                 }).join(',') + ')';
         });
@@ -170,7 +170,7 @@ var Builder = (function(){
             return Promise.reject(new Error("SQL: Missing data for an UPDATE query!"));
         }
 
-        var query = this._query,
+        var query      = this._query,
             conditions = this._conditions;
 
         if (query == null) {
@@ -211,7 +211,7 @@ var Builder = (function(){
             if (this._upsert) query += ' ON DUPLICATE KEY UPDATE ' + queryData;
         }
 
-        return zeal.execute(query).then(function(result) {
+        return zeal.execute(query).then(function (result) {
             return result.insertId == null ? true : result.insertId;
         });
     };
@@ -220,7 +220,7 @@ var Builder = (function(){
      * @returns {Promise}
      */
     proto.erase = function erase() {
-        var query = this._query,
+        var query      = this._query,
             conditions = this._conditions;
 
         if (query == null) {
@@ -247,7 +247,7 @@ var Builder = (function(){
      * @returns {Promise}
      */
     proto.one = function one() {
-        return this.many().then(function(rows) {
+        return this.many().then(function (rows) {
             return rows.shift || null;
         });
     };
@@ -256,7 +256,7 @@ var Builder = (function(){
      * @returns {Promise}
      */
     proto.many = function many() {
-        var query = this._query,
+        var query      = this._query,
             conditions = this._conditions;
 
         if (query == null) {
@@ -276,7 +276,7 @@ var Builder = (function(){
      * @returns {Promise}
      */
     proto.field = function field() {
-        return this.one().then(function(row) {
+        return this.one().then(function (row) {
             if (row == null) return null;
             var field = Object.keys(row)[0];
             return row[field] || null;
@@ -287,10 +287,10 @@ var Builder = (function(){
      * @returns {Promise}
      */
     proto.column = function column() {
-        return this.many().then(function(rows) {
+        return this.many().then(function (rows) {
             if (rows.length === 0) return [];
             var field = Object.keys(rows[0])[0];
-            return rows.map(function(row) {
+            return rows.map(function (row) {
                 return row[field];
             });
         });
@@ -299,56 +299,55 @@ var Builder = (function(){
     return Builder;
 })();
 
-var zeal = module.exports = (function(){
-    var pool;
+var pool;
 
-    return {
-        /**
-         * @param {Object} options, look at mysql module config for pools
-         */
-        configure: function(options) {
-            if (pool) throw new Error('Can only call zeal.configure once!');
+var zeal = module.exports = {
 
-            pool = mysql.createPool(options);
-        },
+    /**
+     * @param {Object} options, look at mysql module config for pools
+     */
+    configure : function configure(options) {
+        if (pool) throw new Error('Can only call zeal.configure once!');
 
-        /**
-         * @param {*} value
-         * @returns {string}
-         */
-        escape: function(value) {
-            if (Array.isArray(value)) return '(' + value.map(mysql.escape).join(',') + ')';
-            return mysql.escape(value);
-        },
+        pool = mysql.createPool(options);
+    },
 
-        /**
-         * @param {string} table
-         */
-        table: function(table) {
-            return new Builder(table);
-        },
+    /**
+     * @param {*} value
+     * @returns {string}
+     */
+    escape : function escape(value) {
+        if (Array.isArray(value)) return '(' + value.map(mysql.escape).join(',') + ')';
+        return mysql.escape(value);
+    },
 
-        /**
-         * @param {string} query
-         * @param {Object|undefined|null} values
-         */
-        query: function(query, values) {
-            return new Builder(null, query, values);
-        },
+    /**
+     * @param {string} table
+     */
+    table : function table(table) {
+        return new Builder(table);
+    },
 
-        /**
-         * @param query
-         * @param values
-         * @returns {Promise}
-         */
-        execute: function(query, values) {
-            return new Promise(function(resolve, reject) {
-                pool.query(query, values, function(err, result) {
-                    if (err) return reject(err);
+    /**
+     * @param {string} query
+     * @param {Object|undefined|null} values
+     */
+    query : function query(query, values) {
+        return new Builder(null, query, values);
+    },
 
-                    resolve(result);
-                });
+    /**
+     * @param query
+     * @param values
+     * @returns {Promise}
+     */
+    execute : function execute(query, values) {
+        return new Promise(function (resolve, reject) {
+            pool.query(query, values, function (err, result) {
+                if (err) return reject(err);
+
+                resolve(result);
             });
-        }
+        });
     }
-})();
+}
