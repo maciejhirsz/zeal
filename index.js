@@ -21,7 +21,10 @@ var Builder = (function () {
     function buildSelect() {
         if (this._select == null) return '*';
 
-        return this._select.map(mysql.escapeId).join(', ');
+        return this._select.map(function (column) {
+            if (column === '*') return column;
+            reutrn mysql.escapeId(column);
+        }).join(', ');
     }
 
     /**
